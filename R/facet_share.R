@@ -6,7 +6,7 @@
 #' @param reverse_num Used when passing on flipped data (times -1) for the 
 #' second (right/bottom) panel. If `TRUE`, this will multiply the axis labels for that panel by -1.
 #' 
-#' @importFrom plyr as.quoted
+#' @importFrom utils packageVersion
 #' @export
 #' @examples
 #' df <- data.frame(age = sample(1:20, 1000, replace = TRUE), 
@@ -58,17 +58,28 @@ facet_share <- function(facets, scales = "fixed",
   )
   
   strip.position <- match.arg(strip.position, c("top", "bottom", "left", "right", "outer"))
+
+  if (as.character(packageVersion("ggplot2")) %in%  c("2.3.0", "2.2.1.9000")) {
+    # Flatten all facets dimensions into a single one
+    facets_list <- as_facets_list(facets)
+    facets <- rlang::flatten_if(facets_list, rlang::is_list)
+  } else {
+    facets = plyr::as.quoted(facets)
+  }
   
   ggproto(NULL, FacetShare,
           shrink = shrink,
-          params = list(facets = as.quoted(facets), free = free,
-                        as.table = as.table, 
-                        strip.position = strip.position,
-                        drop = drop, 
-                        labeller = labeller,
-                        dir = dir,
-                        reverse_num = reverse_num)
-  )
+          params = list(
+            facets = facets, 
+            free = free,
+            as.table = as.table, 
+            strip.position = strip.position,
+            drop = drop, 
+            labeller = labeller,
+            dir = dir,
+            reverse_num = reverse_num
+          )
+        )
 }
 
 #' @rdname ggpol-extensions
@@ -142,7 +153,7 @@ FacetShare <- ggproto("FacetShare", ggplot2::FacetWrap,
     if (!"zeroGrob" %in% class(ax_tick_l)) {
       tick_count <- length(ax_tick_r$x)
       ax_tick_r$x[seq(1, tick_count, 2)] <- unit(0, "npc")
-      ax_tick_r$x[seq(2, tick_count, 2)] <- convertWidth(grobWidth(ax_tick_l), "pt")
+      ax_tick_r$x[seq(2, tick_count, 2)] <- grid::convertWidth(grobWidth(ax_tick_l), "pt")
     }
     
     shared_axis <- matrix(list(
@@ -198,26 +209,187 @@ FacetShare <- ggproto("FacetShare", ggplot2::FacetWrap,
   # add shared axis
   if (params$dir == "h") {
     sa_inds <- grep("null", as.character(panel_table$widths))
-    panel_table$widths[sum(sa_inds) / 2] <- convertWidth(sum(shared_axis$widths), "cm")
+    panel_table$widths[sum(sa_inds) / 2] <- grid::convertWidth(sum(shared_axis$widths), "cm")
     panel_table <- gtable::gtable_add_grob(panel_table, shared_axis, l = 4, t = 3, clip = "on")
   } else {
-    sa_inds <- grep("null", as.character(panel_table$heights))
-    if (sum(sa_inds) / 2 - as.integer(sum(sa_inds) / 2) != 0) {
-      panel_table$heights[as.integer(sum(sa_inds) / 2)] <- 
-        convertHeight(sum(shared_axis$heights), "cm") 
-      panel_table$heights[as.integer(sum(sa_inds) / 2) + 1] <- 
-        convertHeight(sum(shared_axis$heights), "cm") 
-      panel_table <- 
-        gtable::gtable_add_grob(panel_table, shared_axis, l = panel_table$layout$l[2], 
-          t = as.integer(sum(sa_inds) / 2) + 1, b = 6, clip = "on")
-    }
-    else {
-      panel_table$heights[sum(sa_inds) / 2] <- 
-        convertHeight(sum(shared_axis$heights), "cm") + 2 * panel_spacing
-      panel_table <- gtable::gtable_add_grob(
-        panel_table, shared_axis, l = panel_table$layout$l[1], t = (sum(sa_inds) / 2), clip = "on")
+    if (diff(panel_table$layout$t[seq(2)]) %% 2 != 0) {
+      panel_table <- gtable::gtable_add_rows(panel_table, convertHeight(
+        sum(shared_axis$heights), "cm") + 2 * panel_spacing, 
+        ceiling(diff(panel_table$layout$t[seq(2)]) / 2))
+      
+      panel_table <- gtable::gtable_add_grob(panel_table, shared_axis,
+        l = panel_table$layout$l[1],
+        t = as.integer(diff(panel_table$layout$t[seq(2)]) / 2) + 1,
+        clip = "on")
+    } else {
+      panel_table <- gtable::gtable_add_grob(panel_table, shared_axis,
+        l = panel_table$layout$l[1],
+        t = (diff(panel_table$layout$t[seq(2)]) / 2) + 1,
+        clip = "on")
     }
   }
-
+  
   panel_table
   })
+
+
+#######
+new_quosures <- function(x) {
+  if (!rlang::is_list(x)) {
+    stop("Expected a list of quosures")
+  }
+  structure(x,
+            class = "quosures",
+            names = rlang::names2(x)
+  )
+}
+
+as_quosures <- function(x, env, named = FALSE) {
+  x <- lapply(x, rlang::as_quosure, env = env)
+  if (named) {
+    x <- rlang::quos_auto_name(x)
+  }
+  new_quosures(x)
+}
+
+as_facets_list <- function(x) {
+  if (inherits(x, "mapping")) {
+    stop("Please use `vars()` to supply facet variables")
+  }
+  if (inherits(x, "quosures")) {
+    x <- rlang::quos_auto_name(x)
+    return(list(x))
+  }
+  
+  # This needs to happen early because we might get a formula.
+  # facet_grid() directly converted strings to a formula while
+  # facet_wrap() called as.quoted(). Hence this is a little more
+  # complicated for backward compatibility.
+  if (rlang::is_string(x)) {
+    x <- rlang::parse_expr(x)
+  }
+  
+  # At this level formulas are coerced to lists of lists for backward
+  # compatibility with facet_grid(). The LHS and RHS are treated as
+  # distinct facet dimensions and `+` defines multiple facet variables
+  # inside each dimension.
+  if (rlang::is_formula(x)) {
+    return(f_as_facets_list(x))
+  }
+  
+  # For backward-compatibility with facet_wrap()
+  if (!rlang::is_bare_list(x)) {
+    x <- as_quoted(x)
+  }
+  
+  # If we have a list there are two possibilities. We may already have
+  # a proper facet spec structure. Otherwise we coerce each element
+  # with as_quoted() for backward compatibility with facet_grid().
+  if (is.list(x)) {
+    x <- lapply(x, as_facets)
+  }
+  
+  if (sum(vapply(x, length, integer(1))) == 0L) {
+    stop("Must specify at least one variable to facet by", call. = FALSE)
+  }
+  
+  x
+}
+
+as_quoted <- function(x) {
+  if (is.character(x)) {
+    if (length(x) > 1) {
+      x <- paste(x, collapse = "; ")
+    }
+    return(rlang::parse_exprs(x))
+  }
+  if (is.null(x)) {
+    return(list())
+  }
+  if (rlang::is_formula(x)) {
+    return(simplify(x))
+  }
+  list(x)
+}
+# From plyr:::as.quoted.formula
+simplify <- function(x) {
+  if (length(x) == 2 && rlang::is_symbol(x[[1]], "~")) {
+    return(simplify(x[[2]]))
+  }
+  if (length(x) < 3) {
+    return(list(x))
+  }
+  op <- x[[1]]; a <- x[[2]]; b <- x[[3]]
+  
+  if (rlang::is_symbol(op, c("+", "*", "~"))) {
+    c(simplify(a), simplify(b))
+  } else if (rlang::is_symbol(op, "-")) {
+    c(simplify(a), rlang::expr(-!!simplify(b)))
+  } else {
+    list(x)
+  }
+}
+
+f_as_facets_list <- function(f) {
+  lhs <- function(x) if (length(x) == 2) NULL else x[-3]
+  rhs <- function(x) if (length(x) == 2) x else x[-2]
+  
+  rows <- f_as_facets(lhs(f))
+  cols <- f_as_facets(rhs(f))
+  
+  if (length(rows) + length(cols) == 0) {
+    stop("Must specify at least one variable to facet by", call. = FALSE)
+  }
+  
+  if (length(rows)) {
+    list(rows, cols)
+  } else {
+    list(cols)
+  }
+}
+
+as_facets <- function(x) {
+  if (is_facets(x)) {
+    return(x)
+  }
+  
+  if (rlang::is_formula(x)) {
+    # Use different formula method because plyr's does not handle the
+    # environment correctly.
+    f_as_facets(x)
+  } else {
+    vars <- as_quoted(x)
+    as_quosures(vars, globalenv(), named = TRUE)
+  }
+}
+f_as_facets <- function(f) {
+  if (is.null(f)) {
+    return(as_quosures(list()))
+  }
+  
+  env <- rlang::f_env(f) %||% globalenv()
+  
+  # as.quoted() handles `+` specifications
+  vars <- plyr::as.quoted(x=f)
+
+  # `.` in formulas is ignored
+  vars <- discard_dots(vars)
+  
+  as_quosures(vars, env, named = TRUE)
+}
+
+discard_dots <- function(x) {
+  x[!vapply(x, identical, logical(1), as.name("."))]
+}
+
+is_facets <- function(x) {
+  if (!is.list(x)) {
+    return(FALSE)
+  }
+  if (!length(x)) {
+    return(FALSE)
+  }
+  all(vapply(x, rlang::is_quosure, logical(1)))
+}
+
+

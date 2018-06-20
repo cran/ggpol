@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/erocoar/ggpol.svg?branch=master)](https://travis-ci.org/erocoar/ggpol)
-
 ### About
 `ggpol` adds parliament diagrams and various other visualizations and convenience functions to `ggplot2`.
 
@@ -12,7 +10,10 @@ if (!require(devtools)) {
 }
 devtools::install_github('erocoar/ggpol')
 ```
-### Features
+### Selected Features
+Below are two functions added by `ggpol`. For a full overview with applications, please refer to the [vignette](https://erocoar.github.io/ggpol/).
+
+
 `geom_parliament` draws a parliament diagram, clustering points along an arc by parties with each point representing a single member of parliament. 
 
 ```r
@@ -53,3 +54,4 @@ ggplot(df) + geom_boxjitter(aes(x = genotype, y = score, fill = gender),
 ![Hybrid Boxplot](https://i.imgur.com/zlwIs14.png)
 
 ### Roadmap
+If you would like to see a certain feature, please file an issue with a detailed description.
