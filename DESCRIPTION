@@ -1,6 +1,6 @@
 Package: ggpol
 Title: Visualizing Social Science Data with 'ggplot2'
-Version: 0.0.2
+Version: 0.0.3
 Authors@R: person("Frederik", "Tiedemann", email = "fj.tiedemann@googlemail.com", role = c("aut", "cre"))
 Description: A 'ggplot2' extension for implementing parliament charts and several other useful visualizations. 
 URL: https://github.com/erocoar/ggpol
@@ -17,8 +17,8 @@ Collate: 'facet_share.R' 'geom_arcbar.R' 'geom_bartext.R'
         'stat-boxjitter.R' 'stat-circle.R' 'stat-parliament.R'
         'utilities.R'
 NeedsCompilation: no
-Packaged: 2018-06-20 14:59:22 UTC; Frederik
+Packaged: 2018-07-15 10:06:04 UTC; Frederik
 Author: Frederik Tiedemann [aut, cre]
 Maintainer: Frederik Tiedemann <fj.tiedemann@googlemail.com>
 Repository: CRAN
-Date/Publication: 2018-06-20 15:43:06 UTC
+Date/Publication: 2018-07-15 10:40:03 UTC

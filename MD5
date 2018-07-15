@@ -1,8 +1,8 @@
-95724679ab66947fdf2747007e18af18 *DESCRIPTION
+3ad587831419b81670ce86ea822df62b *DESCRIPTION
 f5086f1ec9025a56176c3403a0e9176b *LICENSE
 2ea5211f67908242188ed23483c269b7 *NAMESPACE
-098a3de4be58bcb1bd6e70f2ec945922 *NEWS.md
-60c6f980711f11d15d62aa7d7e7cad03 *R/facet_share.R
+1bd44743dca00ba50cb789a8edd69f13 *NEWS.md
+5c456e4b059b7dca9e09a060cbc61b3a *R/facet_share.R
 16aa0fa093db486213225751e5964e75 *R/geom_arcbar.R
 e23767a1935a57ec51d52a7a8b8f5691 *R/geom_bartext.R
 c611a44a0198efb2d80879c3da24b58b *R/geom_boxjitter.R
@@ -15,7 +15,7 @@ efb8c20ad8291551ce642fbcee221033 *R/stat-boxjitter.R
 5cd07a31af51d6af7faab2aad1dda3a1 *R/stat-circle.R
 5072abb5c983d403dc5aa72640049137 *R/stat-parliament.R
 db9bd417f3724bf1efa23d1c4dc260e8 *R/utilities.R
-6b1fea33fbdf7949702fb80a700fd3c5 *README.md
+3c72be507ae486cbd585c664070973e0 *README.md
 e1550d8b0485458dcc5398b5ad07363e *man/facet_share.Rd
 3ef135e03dee503fc044bed8581883d9 *man/geom_arcbar.Rd
 39cd8c656710d34c34a650d5837caf54 *man/geom_bartext.Rd
