@@ -22,7 +22,7 @@
 #' @param errorbar.length Length of the horizontal whiskers (errorbar). Defaults to half the width of the half-boxplot,
 #' or half the width of the entire boxplot if `boxplot.expand` is set to `TRUE`.
 #' 
-#' @importFrom ggplot2 layer
+#' @importFrom ggplot2 layer position_dodge2
 #' @export
 #' @examples
 #' set.seed(221)
@@ -66,6 +66,16 @@ geom_boxjitter <- function(mapping = NULL, data = NULL,
                            na.rm = FALSE,
                            show.legend = NA,
                            inherit.aes = TRUE) {
+  
+  if (is.character(position)) {
+    if (varwidth == TRUE) position <- position_dodge2(preserve = "single")
+  } else {
+    if (identical(position$preserve, "total") & varwidth == TRUE) {
+      warning("Can't preserve total widths when varwidth = TRUE.", call. = FALSE)
+      position$preserve <- "single"
+    }
+  }
+  
   layer(
     data = data,
     mapping = mapping,
@@ -106,12 +116,14 @@ geom_boxjitter <- function(mapping = NULL, data = NULL,
 #' @rdname ggpol-extensions
 #' @format NULL
 #' @usage NULL
-#' @importFrom ggplot2 ggproto GeomBoxplot aes GeomSegment GeomPoint GeomCrossbar
+#' @importFrom ggplot2 alpha ggproto GeomBoxplot aes GeomSegment GeomPoint GeomCrossbar resolution PositionJitter
 #' @importFrom grid grobTree
 #' @export
 GeomBoxJitter <- ggproto("GeomBoxJitter", GeomBoxplot,
   default_aes = aes(weight = 1, colour = "grey20", fill = "white", size = 0.5,
                     alpha = NA, shape = 19, linetype = "solid"),
+  
+  required_aes = c("x", "lower", "upper", "middle", "ymin", "ymax"),
   
   draw_group = function(data, panel_params, coord, fatten = 2,
                         outlier.colour = NULL, outlier.fill = NULL,
@@ -127,7 +139,6 @@ GeomBoxJitter <- ggproto("GeomBoxJitter", GeomBoxplot,
                         boxplot.expand = FALSE,
                         notch = FALSE, notchwidth = 0.5, varwidth = FALSE,
                         errorbar.draw = FALSE, errorbar.length = 0.5) {
-    
 
     xrange <- data$xmax - data$xmin
     
