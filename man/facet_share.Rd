@@ -4,9 +4,9 @@
 \alias{facet_share}
 \title{A shared axis for two panels}
 \usage{
-facet_share(facets, scales = "fixed", reverse_num = FALSE, shrink = TRUE,
-  labeller = "label_value", as.table = TRUE, switch = NULL, drop = TRUE,
-  dir = "h", strip.position = "top")
+facet_share(facets, scales = "fixed", reverse_num = FALSE,
+  shrink = TRUE, labeller = "label_value", as.table = TRUE,
+  switch = NULL, drop = TRUE, dir = "h", strip.position = "top")
 }
 \arguments{
 \item{facets}{A set of variables or expressions quoted by \code{\link[=vars]{vars()}}
@@ -14,10 +14,8 @@ and defining faceting groups on the rows or columns dimension.
 The variables can be named (the names are passed to \code{labeller}).
 
 For compatibility with the classic interface, can also be a
-formula or character vector. Use either a one sided formula, `~a
-\itemize{
-\item b\code{, or a character vector,}c("a", "b")`.
-}}
+formula or character vector. Use either a one sided formula, \code{~a + b},
+or a character vector, \code{c("a", "b")}.}
 
 \item{scales}{Should scales be fixed (\code{"fixed"}, the default),
 free (\code{"free"}), or free in one dimension (\code{"free_x"},
