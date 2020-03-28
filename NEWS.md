@@ -1,3 +1,9 @@
+# ggpol 0.0.6
+
+## Minor changes
+- fix `jitter.seed` argument for `geom_boxjitter`
+- internal changes in `facet_share` to make it compatible with new versions of `ggplot2` and `grid`
+
 # ggpol 0.0.5
 
 ## New features
